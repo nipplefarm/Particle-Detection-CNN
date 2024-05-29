@@ -14,8 +14,8 @@ if gpus:
         print(e)
 
 # Load datasets
-train_dataset = load_dataset(['data/tfrecords/train.tfrecord'])
-val_dataset = load_dataset(['data/tfrecords/val.tfrecord'])
+train_dataset = load_dataset('data/tfrecords/train.tfrecord').batch(32).shuffle(1000)
+val_dataset = load_dataset('data/tfrecords/val.tfrecord').batch(32)
 
 # Define the model
 model = models.Sequential([
@@ -47,4 +47,4 @@ history = model.fit(
 )
 
 # Save the model
-model.save('model.h5')
+model.save('data/saved_model/model.h5')

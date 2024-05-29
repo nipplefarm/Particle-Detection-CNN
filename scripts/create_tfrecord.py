@@ -38,7 +38,7 @@ def create_tf_example(image_file, annotations):
     classes_text = []
     classes = []
     
-    class_map = {'particle': 1, 'hole': 2, 'smear': 3}
+    class_map = {'particle': 0, 'hole': 1, 'smear': 2}
     
     for annotation in annotations:
         xmins.append(annotation['xmin'] / width)
@@ -58,6 +58,8 @@ def create_tf_example(image_file, annotations):
         'image/object/bbox/ymax': tf.train.Feature(float_list=tf.train.FloatList(value=ymaxs)),
         'image/object/class/text': tf.train.Feature(bytes_list=tf.train.BytesList(value=classes_text)),
         'image/class/label': tf.train.Feature(int64_list=tf.train.Int64List(value=classes)),
+        'image/height': tf.train.Feature(int64_list=tf.train.Int64List(value=[height])),
+        'image/width': tf.train.Feature(int64_list=tf.train.Int64List(value=[width])),
     }))
     
     return tf_example
@@ -65,10 +67,14 @@ def create_tf_example(image_file, annotations):
 def create_tfrecord(image_files, tfrecord_file):
     with tf.io.TFRecordWriter(tfrecord_file) as writer:
         for image_file in image_files:
-            xml_file = image_file.replace('.png', '.xml')
-            annotations = parse_yolo_xml(xml_file)
-            tf_example = create_tf_example(image_file, annotations)
-            writer.write(tf_example.SerializeToString())
+            try:
+                xml_file = image_file.replace('.png', '.xml')
+                annotations = parse_yolo_xml(xml_file)
+                tf_example = create_tf_example(image_file, annotations)
+                writer.write(tf_example.SerializeToString())
+                print(f"Processed {image_file}")
+            except Exception as e:
+                print(f"Error processing {image_file}: {e}")
 
 def main():
     data_dir = 'data/annotated_images'

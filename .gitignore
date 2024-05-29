@@ -366,3 +366,4 @@ FodyWeavers.xsd
 *.png
 *.xml
 *.tfrecord
+*.h5
