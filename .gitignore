@@ -367,3 +367,4 @@ FodyWeavers.xsd
 *.xml
 *.tfrecord
 *.h5
+*.pkl

@@ -1,11 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models # type: ignore
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import EarlyStopping # type: ignore
+from tensorflow.keras.callbacks import ReduceLROnPlateau # type: ignore
 from tensorflow.keras.preprocessing.image import ImageDataGenerator # type: ignore
 import pickle
 import numpy as np
-
+from evaluate_model import evaluate_and_plot
 
 # Ensure TensorFlow uses the GPU
 gpus = tf.config.list_physical_devices('GPU')
@@ -57,18 +57,20 @@ model = models.Sequential([
     layers.Dense(3, activation='softmax')
 ])
 
-# Compile the model
+
+
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.00001)
 
 # Train the model with early stopping
 history = model.fit(
     train_dataset,
-    epochs=100,  # Increase the number of epochs
-    validation_data=val_dataset
+    epochs=10000,  # Increase the number of epochs
+    validation_data=val_dataset,
+    callbacks=[reduce_lr]
 )
 
 # Save the model
@@ -77,3 +79,5 @@ model.save('data/saved_model/model.h5')
 
 with open('data/training_history/history.pkl', 'wb') as file:
     pickle.dump(history.history, file)
+
+evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl')
