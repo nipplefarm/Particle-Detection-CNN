@@ -1,19 +1,23 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import pickle
 from parse_tfrecord import load_dataset
 
 # Load the model
 model = tf.keras.models.load_model('model.h5')
 
-# Load datasets
-val_dataset = load_dataset(['data/val.tfrecord'])
+# Load validation dataset
+val_dataset = load_dataset('data/tfrecords/val.tfrecord').batch(32)
 
 # Evaluate the model
 test_loss, test_acc = model.evaluate(val_dataset)
 print('Test accuracy:', test_acc)
 
+# Load training history
+with open('data/training_history/history.pkl', 'rb') as file:
+    history = pickle.load(file)
+
 # Plot training & validation accuracy/loss values
-history = model.history.history
 acc = history['accuracy']
 val_acc = history['val_accuracy']
 loss = history['loss']
