@@ -21,7 +21,7 @@ def parse_yolo_xml(xml_file):
     
     return objects
 
-def create_tf_example(image_file, annotations):
+def create_tf_feature(image_file, annotations):
     image_string = open(image_file, 'rb').read()
     image_shape = tf.image.decode_png(image_string).shape
     
@@ -48,7 +48,7 @@ def create_tf_example(image_file, annotations):
         classes_text.append(annotation['class'].encode('utf8'))
         classes.append(class_map[annotation['class']])
     
-    tf_example = tf.train.Example(features=tf.train.Features(feature={
+    tf_feature = tf.train.Example(features=tf.train.Features(feature={
         'image/encoded': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_string])),
         'image/format': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_format])),
         'image/filename': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename])),
@@ -62,7 +62,7 @@ def create_tf_example(image_file, annotations):
         'image/width': tf.train.Feature(int64_list=tf.train.Int64List(value=[width])),
     }))
     
-    return tf_example
+    return tf_feature
 
 def create_tfrecord(image_files, tfrecord_file):
     with tf.io.TFRecordWriter(tfrecord_file) as writer:
@@ -70,8 +70,8 @@ def create_tfrecord(image_files, tfrecord_file):
             try:
                 xml_file = image_file.replace('.png', '.xml')
                 annotations = parse_yolo_xml(xml_file)
-                tf_example = create_tf_example(image_file, annotations)
-                writer.write(tf_example.SerializeToString())
+                tf_feature = create_tf_feature(image_file, annotations)
+                writer.write(tf_feature.SerializeToString())
                 print(f"Processed {image_file}")
             except Exception as e:
                 print(f"Error processing {image_file}: {e}")

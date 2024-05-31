@@ -368,3 +368,4 @@ FodyWeavers.xsd
 *.tfrecord
 *.h5
 *.pkl
+data/training_history/history.pkl
