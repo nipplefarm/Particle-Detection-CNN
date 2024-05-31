@@ -31,11 +31,13 @@ def evaluate_and_plot(model_path, val_tfrecord_path, history_path, batch_size=32
     plt.plot(epochs, acc, 'bo', label='Training accuracy')
     plt.plot(epochs, val_acc, 'b', label='Validation accuracy')
     plt.title('Training and validation accuracy')
+    plt.ylim(0, 1)
     plt.legend()
 
     plt.subplot(1, 2, 2)
     plt.plot(epochs, loss, 'bo', label='Training loss')
     plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.ylim(bottom=0)
     plt.title('Training and validation loss')
     plt.legend()
 

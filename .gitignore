@@ -369,3 +369,4 @@ FodyWeavers.xsd
 *.h5
 *.pkl
 data/training_history/history.pkl
+hyperband/
