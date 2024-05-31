@@ -11,7 +11,7 @@ This is mostly designed to check for particles on a nuclepore filter on scans do
 - `README.md`: This file.
 
 ## Steps to Run the Project
-1. Annotate images using your preferred annotation software and export in YOLO XML format.
+1. Annotate images using your preferred annotation software and export in Pascal VOC XML format.
 2. In create_tfrecord, adjust features to your annotations and adjust classes/class map, do the same for the parse_tfrecord. Mkae sure to adjust file paths in all python files.
 3. Create the .tfrecord
 4. In train_model, adjust image augmentation, layers, and other settings as needed.
