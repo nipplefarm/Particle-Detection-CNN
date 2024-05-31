@@ -64,11 +64,12 @@ def create_tf_feature(image_file, annotations):
     
     return tf_feature
 
-def create_tfrecord(image_files, tfrecord_file):
+def create_tfrecord(image_files, annotation_dir, tfrecord_file):
     with tf.io.TFRecordWriter(tfrecord_file) as writer:
         for image_file in image_files:
             try:
-                xml_file = image_file.replace('.png', '.xml')
+                # Construct the corresponding annotation file path
+                xml_file = os.path.join(annotation_dir, os.path.basename(image_file).replace('.png', '.xml'))
                 annotations = parse_yolo_xml(xml_file)
                 tf_feature = create_tf_feature(image_file, annotations)
                 writer.write(tf_feature.SerializeToString())
@@ -77,11 +78,12 @@ def create_tfrecord(image_files, tfrecord_file):
                 print(f"Error processing {image_file}: {e}")
 
 def main():
-    data_dir = 'data/annotated_images'
+    img_dir = 'data/annotated_images/images'
+    annotation_dir = 'data/annotated_images/Annotations'
     output_dir = 'data/tfrecords'
     os.makedirs(output_dir, exist_ok=True)
     
-    image_files = glob.glob(os.path.join(data_dir, '*.png'))
+    image_files = glob.glob(os.path.join(img_dir, '*.png'))
     print(f"Found {len(image_files)} image files.")  # Debug information
     
     if len(image_files) == 0:
@@ -91,10 +93,10 @@ def main():
     train_files, val_files = train_test_split(image_files, test_size=0.2, random_state=42)
     
     print(f"Creating TFRecord for training set with {len(train_files)} images.")
-    create_tfrecord(train_files, os.path.join(output_dir, 'train.tfrecord'))
+    create_tfrecord(train_files, annotation_dir, os.path.join(output_dir, 'train.tfrecord'))
     
     print(f"Creating TFRecord for validation set with {len(val_files)} images.")
-    create_tfrecord(val_files, os.path.join(output_dir, 'val.tfrecord'))
+    create_tfrecord(val_files, annotation_dir, os.path.join(output_dir, 'val.tfrecord'))
     
     print(f'TFRecord files created successfully: {len(train_files)} training images, {len(val_files)} validation images')
 

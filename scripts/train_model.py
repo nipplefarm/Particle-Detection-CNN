@@ -1,11 +1,17 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models # type: ignore
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import ReduceLROnPlateau # type: ignore
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping # type: ignore
 from tensorflow.keras.preprocessing.image import ImageDataGenerator # type: ignore
 import pickle
-import numpy as np
+import argparse
 from evaluate_model import evaluate_and_plot
+
+
+# Argument parser
+parser = argparse.ArgumentParser(description='Train a CNN model.')
+parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train the model.')
+args = parser.parse_args()
 
 # Ensure TensorFlow uses the GPU
 gpus = tf.config.list_physical_devices('GPU')
@@ -57,26 +63,35 @@ model = models.Sequential([
     layers.Dense(3, activation='softmax')
 ])
 
-
-
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
-               metrics=['accuracy'])
+              metrics=['accuracy'])
 
+# Callbacks
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=0.00001)
+tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss',
+    min_delta=.1,
+    patience=25,
+    verbose=0,
+    mode='auto',
+    baseline=None,
+    restore_best_weights=True,
+    start_from_epoch=50
+)
 
 # Train the model with early stopping
 history = model.fit(
     train_dataset,
-    epochs=10000,  # Increase the number of epochs
+    epochs=args.epochs,  # Use the number of epochs from the command line argument
     validation_data=val_dataset,
-    callbacks=[reduce_lr]
+    callbacks=[reduce_lr, early_stopping]
 )
 
 # Save the model
 model.save('data/saved_model/model.h5')
 
-
+# Save the training history
 with open('data/training_history/history.pkl', 'wb') as file:
     pickle.dump(history.history, file)
 
