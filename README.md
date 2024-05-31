@@ -1,6 +1,7 @@
 # Particle Classificatioon Project
 
-This project trains a Convolutional Neural Network (CNN) to classify images into three categories: particle, hole, and smear. The model is trained and evaluated using TensorFlow and leverages GPU acceleration for faster training.
+This project trains a Convolutional Neural Network (CNN) to classify things in images into three categories: particle, hole, and smear. The model is trained and evaluated using TensorFlow and leverages GPU acceleration for faster training.
+This is mostly designed to check for particles on a nuclepore filter on scans done with an AFM.
 
 ## Directory Structure
 
