@@ -53,7 +53,7 @@ def model_builder(hp):
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Flatten())
     model.add(layers.Dense(hp.Int('dense_units', min_value=256, max_value=1024, step=128), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
-    model.add(layers.Dropout(0.7))  # Add Dropout for regularization
+    model.add(layers.Dropout(0.3))  # Add Dropout for regularization
     model.add(layers.BatchNormalization())  # Add Batch Normalization
     model.add(layers.Dense(hp.Int('dense_2_units', min_value=256, max_value=1024, step=128), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     model.add(layers.Dense(3, activation='softmax'))
@@ -72,7 +72,7 @@ tuner = kt.Hyperband(model_builder,
                      objective='val_accuracy',
                      max_epochs=20,
                      factor=3,
-                     directory='hyperband',
+                     directory='data/hyperband',
                      project_name='particle_detection')
 
 # stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
