@@ -1,8 +1,8 @@
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from tensorflow.keras import layers, models # type:ignore
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import ReduceLROnPlateau # type:ignore
+from tensorflow.keras.preprocessing.image import ImageDataGenerator # type:ignore
 import pickle
 import argparse
 from evaluate_model import evaluate_and_plot
