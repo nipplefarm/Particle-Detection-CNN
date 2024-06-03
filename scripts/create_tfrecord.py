@@ -90,7 +90,7 @@ def main():
         print("No image files found. Please check the directory path and file extensions.")
         return
     
-    train_files, val_files = train_test_split(image_files, test_size=0.2, random_state=42)
+    train_files, val_files = train_test_split(image_files, test_size=0.4, random_state=42)
     
     print(f"Creating TFRecord for training set with {len(train_files)} images.")
     create_tfrecord(train_files, annotation_dir, os.path.join(output_dir, 'train.tfrecord'))

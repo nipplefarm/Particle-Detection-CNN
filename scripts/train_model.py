@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import pickle
 import argparse
@@ -53,7 +53,7 @@ def model_builder(hp):
     model.add(layers.MaxPooling2D((2, 2)))
     model.add(layers.Flatten())
     model.add(layers.Dense(hp.Int('dense_units', min_value=256, max_value=1024, step=128), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
-    model.add(layers.Dropout(0.5))  # Add Dropout for regularization
+    model.add(layers.Dropout(0.7))  # Add Dropout for regularization
     model.add(layers.BatchNormalization())  # Add Batch Normalization
     model.add(layers.Dense(hp.Int('dense_2_units', min_value=256, max_value=1024, step=128), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     model.add(layers.Dense(3, activation='softmax'))
@@ -65,7 +65,7 @@ def model_builder(hp):
 
 # Argument parser
 parser = argparse.ArgumentParser(description='Train a CNN model.')
-parser.add_argument('--epochs', type=int, default=1000, help='Number of epochs to train the model.')
+parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train the model.')
 args = parser.parse_args()
 
 tuner = kt.Hyperband(model_builder,

@@ -5,7 +5,7 @@ from parse_tfrecord import load_dataset
 
 def evaluate_and_plot(model_path, val_tfrecord_path, history_path, batch_size=32):
     # Load the model
-    model = tf.keras.models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path, custom_objects={'KerasLayer': tf.keras.layers.Layer})
 
     # Load validation dataset
     val_dataset = load_dataset(val_tfrecord_path).batch(batch_size)
