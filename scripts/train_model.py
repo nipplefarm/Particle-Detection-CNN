@@ -77,7 +77,7 @@ tuner = kt.Hyperband(model_builder,
 
 # stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
 
-tuner.search(train_dataset, epochs=50, validation_data=val_dataset)
+tuner.search(train_dataset, epochs=500 , validation_data=val_dataset)
 
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
@@ -89,7 +89,7 @@ The hyperparameter search is complete. The optimal number of units in the first 
 model = tuner.hypermodel.build(best_hps)
 
 # Callbacks
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1E-5)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=3, min_lr=1E-5)
 
 history = model.fit(
     train_dataset,
