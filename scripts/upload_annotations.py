@@ -2,6 +2,9 @@ import os
 import zipfile
 from azure.storage.blob import BlobServiceClient
 
+# Get the directory of the current script
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
 # Function to read configuration from a text file
 def read_config(file_path):
     config = {}
@@ -15,7 +18,8 @@ def read_config(file_path):
     return config
 
 # Define the path to the configuration file
-config_file_path = os.path.join('..', 'data', 'configs', 'config_upload.txt')
+config_file_path = os.path.join(base_dir, '..', 'data', 'configs', 'config_upload.txt')
+print(f"Trying to read config file from: {os.path.abspath(config_file_path)}")
 
 # Read configuration from config_upload.txt
 config = read_config(config_file_path)
@@ -27,11 +31,11 @@ blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING
 container_client = blob_service_client.get_container_client(CONTAINER_NAME)
 
 # Directory to check for zip files
-zips_dir = os.path.join('..', 'data', 'zips')
+zips_dir = os.path.join(base_dir, '..', 'data', 'zips')
 
 # Directories to save extracted files
-output_image_dir = os.path.join('..', 'data', 'annotated_images', 'images')
-output_annotation_dir = os.path.join('..', 'data', 'annotated_images', 'Annotations')
+output_image_dir = os.path.join(base_dir, '..', 'data', 'annotated_images', 'images')
+output_annotation_dir = os.path.join(base_dir, '..', 'data', 'annotated_images', 'Annotations')
 os.makedirs(output_image_dir, exist_ok=True)
 os.makedirs(output_annotation_dir, exist_ok=True)
 
@@ -43,11 +47,11 @@ for zip_file in zip_files:
     
     # Extract contents of the zip file
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        zip_ref.extractall(os.path.join('..', 'data', 'annotated_images'))
+        zip_ref.extractall(os.path.join(base_dir, '..', 'data', 'annotated_images'))
         print(f"Extracted files from {zip_file_path} to data/annotated_images")
     
     # Move extracted files to the appropriate directories if needed
-    for root, dirs, files in os.walk(os.path.join('..', 'data', 'annotated_images')):
+    for root, dirs, files in os.walk(os.path.join(base_dir, '..', 'data', 'annotated_images')):
         for file in files:
             file_path = os.path.join(root, file)
             if file.endswith('.png'):
