@@ -1,0 +1,1 @@
+zip folders containing images and annotations in VOC format, must be in two folders in the zip, images and Annotations.
