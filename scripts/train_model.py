@@ -1,9 +1,9 @@
 import os
 import time  # Import the time module
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from tensorflow.keras import layers, models # type:ignore
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras.callbacks import ReduceLROnPlateau # type:ignore
 import matplotlib.pyplot as plt
 import pickle
 import argparse
@@ -27,39 +27,22 @@ if gpus:
 start_time = time.time()
 
 # List of possible augmentations
-def apply_rotation(image, original_shape):
-    image = tf.image.rot90(image, k=random.randint(1, 3))
-    return tf.image.resize(image, original_shape[:2])
+def apply_rotation(image):
+    return tf.image.rot90(image, k=random.randint(1, 3))
 
-def apply_width_shift(image, original_shape):
-    image = tf.image.pad_to_bounding_box(image, 0, 0, original_shape[0] + 40, original_shape[1] + 40)
-    image = tf.image.random_crop(image, size=original_shape)
-    return image
+def apply_width_shift(image):
+    return tf.image.random_crop(image, size=tf.shape(image))
 
-def apply_height_shift(image, original_shape):
-    image = tf.image.pad_to_bounding_box(image, 0, 0, original_shape[0] + 40, original_shape[1] + 40)
-    image = tf.image.random_crop(image, size=original_shape)
-    return image
+def apply_height_shift(image):
+    return tf.image.random_crop(image, size=tf.shape(image))
 
-def apply_shear(image, original_shape):
-    image = tf.image.resize_with_crop_or_pad(image, original_shape[0] + 40, original_shape[1] + 40)
-    image = tf.image.central_crop(image, central_fraction=0.8)
-    return tf.image.resize(image, original_shape[:2])
+def apply_shear(image):
+    return tf.image.central_crop(image, central_fraction=0.8)
 
-def apply_zoom(image, original_shape):
-    scales = list(np.arange(0.8, 1.2, 0.1))
-    boxes = np.zeros((len(scales), 4))
-    for i, scale in enumerate(scales):
-        x1 = y1 = 0.5 - 0.5 * scale
-        x2 = y2 = 0.5 + 0.5 * scale
-        boxes[i] = [y1, x1, y2, x2]
-    def random_crop(img):
-        crop_size = tf.random.uniform([], 0, len(scales), dtype=tf.int32)
-        cropped_image = tf.image.crop_and_resize([img], boxes, box_indices=tf.zeros((len(scales),), dtype=tf.int32), crop_size=[original_shape[0], original_shape[1]])
-        return cropped_image[0]
-    return random_crop(image)
+def apply_zoom(image):
+    return tf.image.random_crop(image, size=tf.shape(image))
 
-def apply_horizontal_flip(image, original_shape):
+def apply_horizontal_flip(image):
     return tf.image.random_flip_left_right(image)
 
 augmentations = [apply_rotation, apply_width_shift, apply_height_shift, apply_shear, apply_zoom, apply_horizontal_flip]
@@ -68,7 +51,8 @@ def random_augment(image, label):
     original_shape = tf.shape(image)
     chosen_augmentations = random.sample(augmentations, 3)
     for aug in chosen_augmentations:
-        image = aug(image, original_shape)
+        image = aug(image)
+    image = tf.image.resize(image, original_shape[:2])
     return image, label
 
 def augment_image_5_times(image, label):
@@ -96,7 +80,7 @@ train_dataset_augmented = train_dataset.flat_map(augment_image_5_times)
 visualize_augmentations(train_dataset_augmented, num_images=5)
 
 # Combine datasets
-combined_train_dataset = train_dataset.concatenate(train_dataset_augmented).batch(32).shuffle(1000)
+combined_train_dataset = train_dataset.concatenate(train_dataset_augmented).batch(16).shuffle(1000)
 
 # Hyperparameter tuning
 def model_builder(hp):
@@ -137,7 +121,7 @@ tuner = kt.Hyperband(model_builder,
 
 # stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
 
-tuner.search(combined_train_dataset, epochs=500 , validation_data=val_dataset)
+tuner.search(combined_train_dataset, epochs=500, validation_data=val_dataset)
 
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
@@ -153,7 +137,7 @@ reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, min_l
 
 history = model.fit(
     combined_train_dataset,
-    epochs=args.epochs,  # Use the number of epochs from the command line argument
+    epochs=args.epochs,
     validation_data=val_dataset,
     callbacks=[reduce_lr]
 )
