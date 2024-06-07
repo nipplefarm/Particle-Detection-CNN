@@ -78,14 +78,23 @@ def create_tfrecord(image_files, annotation_dir, tfrecord_file):
                 print(f"Error processing {image_file}: {e}")
 
 def main():
-    img_dir = 'data/annotated_images/images'
-    annotation_dir = 'data/annotated_images/Annotations'
-    output_dir = 'data/tfrecords'
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    img_dir = os.path.join(base_dir, 'data', 'annotated_images', 'images')
+    annotation_dir = os.path.join(base_dir, 'data', 'annotated_images', 'Annotations')
+    output_dir = os.path.join(base_dir, 'data', 'tfrecords')
     os.makedirs(output_dir, exist_ok=True)
+
+    # Print current working directory
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Using base directory: {base_dir}")
     
     image_files = glob.glob(os.path.join(img_dir, '*.png'))
-    print(f"Found {len(image_files)} image files.")  # Debug information
     
+    # Print files found by glob
+    print(f"Files found: {image_files}")
+    
+    print(f"Found {len(image_files)} image files.")  # Debug information
+
     if len(image_files) == 0:
         print("No image files found. Please check the directory path and file extensions.")
         return
