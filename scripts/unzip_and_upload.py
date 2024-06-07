@@ -18,7 +18,7 @@ def read_config(file_path):
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 # Define the path to the configuration file
-config_file_path = os.path.join(base_dir, 'data', 'configs', 'config_upload.txt')
+config_file_path = os.path.join(base_dir, 'data', 'configs', 'config_upload_anno.txt')
 
 # Read configuration from config_upload.txt
 config = read_config(config_file_path)
