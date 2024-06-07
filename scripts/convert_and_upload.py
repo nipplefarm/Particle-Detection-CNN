@@ -17,14 +17,20 @@ def read_config(file_path):
             config[name.strip()] = value.strip()
     return config
 
-# Read configuration from config.txt
-config = read_config('config.txt')
+# Define the base directory (you can adjust this to your specific base directory)
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+# Define the path to the configuration file
+config_file_path = os.path.join(base_dir, 'config_upload_just_img.txt')
+
+# Read configuration from config_upload_just_img.txt
+config = read_config(config_file_path)
 CONNECTION_STRING = config['AZURE_STORAGE_CONNECTION_STRING']
 CONTAINER_NAME = config['AZURE_CONTAINER_NAME']
 
 # Directory where your Bruker files and PNG images are located
-bruker_directory = r"data/unannotated_images/bruker_files"
-png_directory = r"data/unannotated_images/pngs"
+bruker_directory = os.path.join(base_dir, 'data', 'unannotated_images', 'bruker_files')
+png_directory = os.path.join(base_dir, 'data', 'unannotated_images', 'pngs')
 
 # Create the 'pngs' directory if it does not exist
 os.makedirs(png_directory, exist_ok=True)
