@@ -1,0 +1,2 @@
+AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=<account-name-here>;AccountKey=<account-key-here>;EndpointSuffix=core.windows.net
+AZURE_CONTAINER_NAME=<container-name-here>
