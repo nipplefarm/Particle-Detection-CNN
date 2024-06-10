@@ -23,8 +23,7 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-# Start the timer
-start_time = time.time()
+
 
 # List of possible augmentations
 def apply_rotation(image):
@@ -68,6 +67,9 @@ def visualize_augmentations(dataset, num_images=5):
         plt.title(f"Label: {label.numpy()}")
         plt.axis("off")
     plt.show()
+
+# Start the timer
+start_time = time.time()
 
 # Load datasets
 train_dataset = load_dataset('data/tfrecords/train.tfrecord')
@@ -142,6 +144,11 @@ history = model.fit(
     callbacks=[reduce_lr]
 )
 
+# End the timer
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f"Elapsed time: {elapsed_time:.2f} seconds")
+
 # Save the model
 model.save('data/saved_model/model.h5')
 
@@ -151,7 +158,4 @@ with open('data/training_history/history.pkl', 'wb') as file:
 
 evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl')
 
-# End the timer
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Elapsed time: {elapsed_time:.2f} seconds")
+
