@@ -44,7 +44,12 @@ def apply_zoom(image):
 def apply_horizontal_flip(image):
     return tf.image.random_flip_left_right(image)
 
-augmentations = [apply_rotation, apply_width_shift, apply_height_shift, apply_shear, apply_zoom, apply_horizontal_flip]
+def apply_gaussian_noise(image):
+    noise = tf.random.normal(shape=tf.shape(image), mean=0.0, stddev=.05, dtype=tf.float32)
+    noisy_image = tf.add(image, noise)
+    return tf.clip_by_value(noisy_image, 0.0, 1.0)
+
+augmentations = [apply_gaussian_noise, apply_rotation, apply_width_shift, apply_height_shift, apply_shear, apply_zoom, apply_horizontal_flip]
 
 def random_augment(image, label):
     original_shape = tf.shape(image)
@@ -55,7 +60,7 @@ def random_augment(image, label):
     return image, label
 
 def augment_image_5_times(image, label):
-    augmented_images = [random_augment(image, label) for _ in range(5)]
+    augmented_images = [random_augment(image, label) for _ in range(10)]
     augmented_images, augmented_labels = zip(*augmented_images)  # Separate images and labels
     return tf.data.Dataset.from_tensor_slices((list(augmented_images), list(augmented_labels)))
 
@@ -116,12 +121,13 @@ args = parser.parse_args()
 
 tuner = kt.Hyperband(model_builder,
                      objective='val_accuracy',
-                     max_epochs=20,
+                     max_epochs=50,
                      factor=3,
+		     hyperband_iterations=50,
                      directory='data/hyperband',
                      project_name='particle_detection')
 
-# stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=50)
 
 tuner.search(combined_train_dataset, epochs=500, validation_data=val_dataset)
 
@@ -144,11 +150,6 @@ history = model.fit(
     callbacks=[reduce_lr]
 )
 
-# End the timer
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Elapsed time: {elapsed_time:.2f} seconds")
-
 # Save the model
 model.save('data/saved_model/model.h5')
 
@@ -156,6 +157,10 @@ model.save('data/saved_model/model.h5')
 with open('data/training_history/history.pkl', 'wb') as file:
     pickle.dump(history.history, file)
 
+# End the timer
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f"Elapsed time: {elapsed_time:.2f} seconds")
 evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl')
 
 
