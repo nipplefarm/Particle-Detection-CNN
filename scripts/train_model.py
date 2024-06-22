@@ -1,9 +1,9 @@
 import os
 import time
 import tensorflow as tf
-from tensorflow.keras import layers, models #type:ignore
+from tensorflow.keras import layers, models
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping #type:ignore
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard
 import matplotlib.pyplot as plt
 import pickle
 import argparse
@@ -11,6 +11,8 @@ from evaluate_model import evaluate_and_plot
 import kerastuner as kt
 import numpy as np
 import random
+from datetime import datetime
+import visualkeras
 
 # Ensure TensorFlow uses the GPU
 gpus = tf.config.list_physical_devices('GPU')
@@ -26,6 +28,9 @@ if gpus:
 plot_directory = 'data/plots'
 if not os.path.exists(plot_directory):
     os.makedirs(plot_directory)
+
+log_dir = os.path.join("logs", "fit", datetime.now().strftime("%Y%m%d-%H%M%S"))
+tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1, write_graph=True)
 
 # List of possible augmentations
 def apply_rotation(image):
@@ -83,7 +88,6 @@ def visualize_augmentations(dataset, num_images=5):
     plot_path = os.path.join(plot_directory, 'aug_img.png')
     plt.savefig(plot_path, bbox_inches='tight')  # Save with tight bounding box
     plt.show()
-
 
 # Start the timer
 start_time = time.time()
@@ -161,7 +165,7 @@ history = model.fit(
     combined_train_dataset,
     epochs=args.epochs,
     validation_data=val_dataset,
-    callbacks=[reduce_lr]
+    callbacks=[reduce_lr, early_stopping, tensorboard_callback]
 )
 
 # Save the model
@@ -176,3 +180,9 @@ end_time = time.time()
 elapsed_time = end_time - start_time
 print(f"Elapsed time: {elapsed_time:.2f} seconds")
 evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl', plot_directory)
+
+# Create the visualized architecture with annotations
+font_path = "arial.ttf"  # Adjust the font path if necessary
+font = ImageFont.truetype(font_path, 18)
+
+visualkeras.layered_view(model, to_file='data/plots/model_architecture.png', legend=True, font=font).show()
