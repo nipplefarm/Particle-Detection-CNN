@@ -376,4 +376,4 @@ data/unannotated_images/bruker_files/*.[0-9][0-9][0-9]
 data/unannotated_images/pngs/.*png
 data/configs
 data/zips/*.zip
-
+model.svg
