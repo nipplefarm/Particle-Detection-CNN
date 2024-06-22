@@ -1,9 +1,9 @@
 import os
-import time  # Import the time module
+import time
 import tensorflow as tf
-from tensorflow.keras import layers, models # type:ignore
+from tensorflow.keras import layers, models #type:ignore
 from parse_tfrecord import load_dataset
-from tensorflow.keras.callbacks import ReduceLROnPlateau # type:ignore
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping #type:ignore
 import matplotlib.pyplot as plt
 import pickle
 import argparse
@@ -23,7 +23,9 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-
+plot_directory = 'data/plots'
+if not os.path.exists(plot_directory):
+    os.makedirs(plot_directory)
 
 # List of possible augmentations
 def apply_rotation(image):
@@ -36,7 +38,7 @@ def apply_height_shift(image):
     return tf.image.random_crop(image, size=tf.shape(image))
 
 def apply_shear(image):
-    return tf.image.central_crop(image, central_fraction=0.8)
+    return tf.image.central_crop(image, central_fraction=0.5)
 
 def apply_zoom(image):
     return tf.image.random_crop(image, size=tf.shape(image))
@@ -49,11 +51,17 @@ def apply_gaussian_noise(image):
     noisy_image = tf.add(image, noise)
     return tf.clip_by_value(noisy_image, 0.0, 1.0)
 
-augmentations = [apply_gaussian_noise, apply_rotation, apply_width_shift, apply_height_shift, apply_shear, apply_zoom, apply_horizontal_flip]
+def apply_random_brightness(image):
+    return tf.image.random_brightness(image, .2)
+
+def apply_random_contrast(image):
+    return tf.image.random_contrast(image, .5, 1)
+
+augmentations = [apply_gaussian_noise, apply_rotation, apply_width_shift, apply_height_shift, apply_shear, apply_zoom, apply_horizontal_flip, apply_random_brightness, apply_random_contrast]
 
 def random_augment(image, label):
     original_shape = tf.shape(image)
-    chosen_augmentations = random.sample(augmentations, 3)
+    chosen_augmentations = random.sample(augmentations, 5)
     for aug in chosen_augmentations:
         image = aug(image)
     image = tf.image.resize(image, original_shape[:2])
@@ -69,48 +77,54 @@ def visualize_augmentations(dataset, num_images=5):
     for i, (image, label) in enumerate(dataset.take(num_images)):
         plt.subplot(1, num_images, i + 1)
         plt.imshow(np.clip(image.numpy(), 0, 1))  # Ensure the values are between 0 and 1
-        plt.title(f"Label: {label.numpy()}")
+        plt.title(f"Augmentation {i + 1}")
         plt.axis("off")
+    plt.tight_layout()
+    plot_path = os.path.join(plot_directory, 'aug_img.png')
+    plt.savefig(plot_path, bbox_inches='tight')  # Save with tight bounding box
     plt.show()
+
 
 # Start the timer
 start_time = time.time()
 
 # Load datasets
 train_dataset = load_dataset('data/tfrecords/train.tfrecord')
-val_dataset = load_dataset('data/tfrecords/val.tfrecord').batch(32)
+val_dataset = load_dataset('data/tfrecords/val.tfrecord').batch(16)
 
 # Apply the custom augmentation function
 train_dataset_augmented = train_dataset.flat_map(augment_image_5_times)
 
 # Visualize augmented images
-visualize_augmentations(train_dataset_augmented, num_images=5)
+visualize_augmentations(train_dataset_augmented, num_images=3)
 
 # Combine datasets
-combined_train_dataset = train_dataset.concatenate(train_dataset_augmented).batch(16).shuffle(1000)
+combined_train_dataset = train_dataset.concatenate(train_dataset_augmented).batch(8).shuffle(1000)
 
 # Hyperparameter tuning
 def model_builder(hp):
     model = models.Sequential()
-    model.add(layers.Conv2D(hp.Int('conv_1_units', min_value=32, max_value=256, step=32), (3, 3), activation='relu', input_shape=(256, 256, 3)))
+    model.add(layers.Conv2D(hp.Int('conv_1_units', min_value=32, max_value=128, step=32), (3, 3), activation='relu', input_shape=(256, 256, 3)))
+    model.add(layers.BatchNormalization())
     model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Conv2D(hp.Int('conv_2_units', min_value=32, max_value=256, step=32), (3, 3), activation='relu'))
+
+    model.add(layers.Conv2D(hp.Int('conv_2_units', min_value=32, max_value=128, step=32), (3, 3), activation='relu'))
+    model.add(layers.BatchNormalization())
     model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Conv2D(hp.Int('conv_3_units', min_value=32, max_value=256, step=32), (3, 3), activation='relu'))
+    
+    model.add(layers.Conv2D(hp.Int('conv_3_units', min_value=32, max_value=128, step=32), (3, 3), activation='relu'))
+    model.add(layers.BatchNormalization())
     model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Conv2D(hp.Int('conv_4_units', min_value=32, max_value=256, step=32), (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Conv2D(hp.Int('conv_5_units', min_value=32, max_value=256, step=32), (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D((2, 2)))
+    model.add(layers.Dropout(0.5))  # Increase dropout rate
+
     model.add(layers.Flatten())
-    model.add(layers.Dense(hp.Int('dense_units', min_value=256, max_value=1024, step=128), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
-    model.add(layers.Dropout(0.5))  # Add Dropout for regularization
-    model.add(layers.BatchNormalization())  # Add Batch Normalization
-    model.add(layers.Dense(hp.Int('dense_2_units', min_value=256, max_value=1024, step=128), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
-    model.add(layers.Dense(3, activation='softmax'))
+    model.add(layers.Dense(hp.Int('dense_units', min_value=128, max_value=512, step=64), activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Dense(1, activation='sigmoid'))
 
     model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
+                  loss='binary_crossentropy',
                   metrics=['accuracy'])
     return model
 
@@ -121,13 +135,12 @@ args = parser.parse_args()
 
 tuner = kt.Hyperband(model_builder,
                      objective='val_accuracy',
-                     max_epochs=50,
+                     max_epochs=20,
                      factor=3,
-		     hyperband_iterations=50,
-                     directory='data/hyperband',
+                     directory=r'D:\wdm230\hyperband',
                      project_name='particle_detection')
 
-stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=50)
+stop_early = EarlyStopping(monitor='val_loss', patience=10)
 
 tuner.search(combined_train_dataset, epochs=500, validation_data=val_dataset)
 
@@ -141,7 +154,8 @@ The hyperparameter search is complete. The optimal number of units in the first 
 model = tuner.hypermodel.build(best_hps)
 
 # Callbacks
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, min_lr=1E-4)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=.75, patience=1, min_lr=1E-8)
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
 history = model.fit(
     combined_train_dataset,
@@ -161,6 +175,4 @@ with open('data/training_history/history.pkl', 'wb') as file:
 end_time = time.time()
 elapsed_time = end_time - start_time
 print(f"Elapsed time: {elapsed_time:.2f} seconds")
-evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl')
-
-
+evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl', plot_directory)

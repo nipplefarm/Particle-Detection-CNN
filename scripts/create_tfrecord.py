@@ -10,14 +10,16 @@ def parse_yolo_xml(xml_file):
     
     objects = []
     for member in root.findall('object'):
-        value = {
-            'class': member.find('name').text.lower(),  # Normalize to lowercase
-            'xmin': int(member.find('bndbox/xmin').text),
-            'xmax': int(member.find('bndbox/xmax').text),
-            'ymin': int(member.find('bndbox/ymin').text),
-            'ymax': int(member.find('bndbox/ymax').text)
-        }
-        objects.append(value)
+        name = member.find('name').text.lower()
+        if name == 'particle':
+            value = {
+                'class': name,
+                'xmin': int(member.find('bndbox/xmin').text),
+                'xmax': int(member.find('bndbox/xmax').text),
+                'ymin': int(member.find('bndbox/ymin').text),
+                'ymax': int(member.find('bndbox/ymax').text)
+            }
+            objects.append(value)
     
     return objects
 
@@ -38,7 +40,7 @@ def create_tf_feature(image_file, annotations):
     classes_text = []
     classes = []
     
-    class_map = {'particle': 0, 'hole': 1, 'smear': 2}
+    class_map = {'particle': 0}
     
     for annotation in annotations:
         xmins.append(annotation['xmin'] / width)
