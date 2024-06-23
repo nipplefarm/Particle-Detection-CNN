@@ -55,4 +55,4 @@ def evaluate_and_plot(model_path, val_tfrecord_path, history_path, plot_director
 
 # Example usage
 plot_directory = 'data/plots'
-evaluate_and_plot('data/saved_model/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl', plot_directory)
+evaluate_and_plot('data/saved_model/001/model.h5', 'data/tfrecords/val.tfrecord', 'data/training_history/history.pkl', plot_directory)
