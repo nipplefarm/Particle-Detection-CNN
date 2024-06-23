@@ -377,3 +377,4 @@ data/unannotated_images/pngs/.*png
 data/configs
 data/zips/*.zip
 model.svg
+scripts/visualizer.py
